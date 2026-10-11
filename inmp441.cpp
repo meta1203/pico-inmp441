@@ -98,15 +98,14 @@ void INMP441<T>::init_pio(uint8_t install_to) {
 
 template<typename T>
 void INMP441<T>::init_dma() {
-	this->dma.ringbuf = (int32_t*)aligned_alloc(this->buffered_sample_count, this->buffered_sample_count * sizeof(int32_t));
-	for (size_t i = 0; i < this->buffered_sample_count; i += 1) {
-		this->dma.ringbuf[i] = 0;
-	}
+	const uint32_t dma_ring_buffer_byte_size = this->buffered_sample_count * sizeof(int32_t);
+	this->dma.ringbuf = (int32_t*)aligned_alloc(dma_ring_buffer_byte_size, dma_ring_buffer_byte_size);
+	std::memset(this->dma.ringbuf, 0, dma_ring_buffer_byte_size);
 	this->dma.channel = dma_claim_unused_channel(true);
 	dma_channel_config dma_config = dma_channel_get_default_config(this->dma.channel);
 	channel_config_set_read_increment(&dma_config, false);
 	channel_config_set_write_increment(&dma_config, true);
-	channel_config_set_ring(&dma_config, true, log2(this->buffered_sample_count));
+	channel_config_set_ring(&dma_config, true, log2(this->buffered_sample_count)+sizeof(int32_t));
 	channel_config_set_dreq(&dma_config, pio_get_dreq(this->pio.pio, this->pio.sm, false));
 	#if PICO_RP2040
 	// RP2040-specific code (using 2-channel chained dma)
