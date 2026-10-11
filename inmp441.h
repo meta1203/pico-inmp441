@@ -4,6 +4,11 @@
 #include "pico/stdlib.h"
 #include "stdint.h"
 
+// I2S capture program, one 32-bit slot per channel per stereo frame.
+// The 2-bit side-set field drives the SCK and WS pins (base pin set at runtime), and
+// each data bit costs 2 instructions: "in pins, 1" samples the data pin with the clock
+// high, the jmp pulls it low again. Each wrap performs 32 "in pins, 1" operations
+// (31 from the x-- loop + 1 extra), matching a 32-bit I2S slot.
 static const uint16_t i2s_read32_instructions[] = {
 					//     .wrap_target
 	0xe03e, //  0: set    x, 30           side 0b00
